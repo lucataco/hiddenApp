@@ -26,8 +26,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationWillTerminate(_ notification: Notification) {
         // Ensure icons are revealed before the app quits
-        if let controller = statusBarController, controller.isCollapsed {
-            controller.expand()
-        }
+        statusBarController?.prepareForTermination()
     }
 }

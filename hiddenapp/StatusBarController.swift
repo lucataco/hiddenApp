@@ -17,9 +17,14 @@
 //
 
 import AppKit
+import os
 import SwiftUI
 
 final class StatusBarController {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.catacolabs.hiddenapp",
+        category: "StatusBarController"
+    )
     
     // MARK: - Status Items
     
@@ -47,6 +52,9 @@ final class StatusBarController {
     
     /// Observation for screen parameter changes.
     private var screenObserver: NSObjectProtocol?
+
+    /// Pending retry for a collapse attempt that raced status-item placement.
+    private var pendingCollapseRetry: DispatchWorkItem?
     
     // MARK: - Right-click Menu & Preferences Popover
     
@@ -66,9 +74,11 @@ final class StatusBarController {
         setupAutoHide()
         setupScreenObserver()
         updateCollapseLength()
+        startInitialAutoHideTimer()
     }
     
     deinit {
+        pendingCollapseRetry?.cancel()
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         if let rightClickMonitor { NSEvent.removeMonitor(rightClickMonitor) }
     }
@@ -165,6 +175,14 @@ final class StatusBarController {
             self?.collapse()
         }
     }
+
+    private func startInitialAutoHideTimer() {
+        // A login-launch starts expanded but never calls expand(), so schedule
+        // the same auto-hide countdown once the status items have joined the bar.
+        DispatchQueue.main.async { [weak self] in
+            self?.autoHideManager.startTimer()
+        }
+    }
     
     private func setupScreenObserver() {
         screenObserver = NotificationCenter.default.addObserver(
@@ -215,8 +233,22 @@ final class StatusBarController {
     
     /// Collapse: push icons to the left of the separator off-screen.
     func collapse() {
+        attemptCollapse(retriesRemaining: Constants.separatorPositionValidationMaxRetries)
+    }
+
+    private func attemptCollapse(retriesRemaining: Int) {
         guard !isCollapsed else { return }
-        guard isSeparatorValidPosition else { return }
+        guard isSeparatorValidPosition else {
+            scheduleCollapseRetry(retriesRemaining: retriesRemaining)
+            return
+        }
+
+        pendingCollapseRetry?.cancel()
+        pendingCollapseRetry = nil
+
+        if retriesRemaining < Constants.separatorPositionValidationMaxRetries {
+            logger.info("Collapse retry succeeded after status-item positions became valid.")
+        }
         
         // Recompute collapse length at collapse time so it always reflects
         // the current display configuration (handles monitor connect/disconnect,
@@ -229,6 +261,41 @@ final class StatusBarController {
         
         autoHideManager.cancelTimer()
     }
+
+    private func scheduleCollapseRetry(retriesRemaining: Int) {
+        pendingCollapseRetry?.cancel()
+
+        let toggleX = toggleItem.button?.window?.frame.origin.x
+        let separatorX = separatorItem.button?.window?.frame.origin.x
+
+        guard retriesRemaining > 0 else {
+            logger.error(
+                "Unable to collapse hidden icons because separator position is invalid. toggleX=\(String(describing: toggleX), privacy: .public), separatorX=\(String(describing: separatorX), privacy: .public)"
+            )
+            return
+        }
+
+        if retriesRemaining == Constants.separatorPositionValidationMaxRetries {
+            logger.warning(
+                "Separator position is not ready or invalid; retrying collapse. retriesRemaining=\(retriesRemaining, privacy: .public), toggleX=\(String(describing: toggleX), privacy: .public), separatorX=\(String(describing: separatorX), privacy: .public)"
+            )
+        } else {
+            logger.debug(
+                "Retrying collapse while separator position remains invalid. retriesRemaining=\(retriesRemaining, privacy: .public), toggleX=\(String(describing: toggleX), privacy: .public), separatorX=\(String(describing: separatorX), privacy: .public)"
+            )
+        }
+
+        let retry = DispatchWorkItem { [weak self] in
+            self?.pendingCollapseRetry = nil
+            self?.attemptCollapse(retriesRemaining: retriesRemaining - 1)
+        }
+
+        pendingCollapseRetry = retry
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + Constants.separatorPositionValidationRetryDelay,
+            execute: retry
+        )
+    }
     
     /// Expand: restore the separator to its normal thin width, revealing hidden icons.
     func expand() {
@@ -239,6 +306,17 @@ final class StatusBarController {
         updateChevron()
         
         autoHideManager.startTimer()
+    }
+
+    /// Reveal icons during app shutdown without scheduling another auto-hide timer.
+    func prepareForTermination() {
+        if isCollapsed {
+            isCollapsed = false
+            separatorItem.length = Constants.separatorNormalLength
+            updateChevron()
+        }
+
+        autoHideManager.cancelTimer()
     }
     
     /// Toggle between collapsed and expanded states.
@@ -301,9 +379,7 @@ final class StatusBarController {
     }
     
     @objc private func quitApp(_ sender: Any?) {
-        if isCollapsed {
-            expand()
-        }
+        prepareForTermination()
         NSApplication.shared.terminate(nil)
     }
 }

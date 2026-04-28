@@ -12,7 +12,7 @@ import ServiceManagement
 struct PreferencesView: View {
     let autoHideManager: AutoHideManager
     
-    @AppStorage(Constants.autoHideEnabled) private var autoHideEnabled = false
+    @AppStorage(Constants.autoHideEnabled) private var autoHideEnabled = Constants.defaultAutoHideEnabled
     @AppStorage(Constants.autoHideDelay) private var autoHideDelay = Constants.defaultAutoHideDelay
     
     @State private var launchAtLogin = false

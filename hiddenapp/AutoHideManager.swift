@@ -19,10 +19,15 @@ final class AutoHideManager {
     
     /// Whether auto-hide is enabled. Reads from UserDefaults.
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: Constants.autoHideEnabled) }
+        get {
+            UserDefaults.standard.object(forKey: Constants.autoHideEnabled) as? Bool
+                ?? Constants.defaultAutoHideEnabled
+        }
         set {
             UserDefaults.standard.set(newValue, forKey: Constants.autoHideEnabled)
-            if !newValue {
+            if newValue {
+                startTimer()
+            } else {
                 cancelTimer()
             }
         }
@@ -37,6 +42,9 @@ final class AutoHideManager {
         set {
             let clamped = min(max(newValue, Constants.minimumAutoHideDelay), Constants.maximumAutoHideDelay)
             UserDefaults.standard.set(clamped, forKey: Constants.autoHideDelay)
+            if isEnabled {
+                startTimer()
+            }
         }
     }
     
