@@ -1,5 +1,6 @@
 # Xcode
 build/
+release/
 DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
