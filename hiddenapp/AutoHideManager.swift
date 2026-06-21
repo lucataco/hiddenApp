@@ -9,6 +9,7 @@
 import Foundation
 import os
 
+@MainActor
 final class AutoHideManager {
 
     /// Called when the auto-hide timer fires and icons should be collapsed.

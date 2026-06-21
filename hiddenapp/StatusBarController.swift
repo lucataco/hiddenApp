@@ -20,6 +20,7 @@ import AppKit
 import os
 import SwiftUI
 
+@MainActor
 final class StatusBarController {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.catacolabs.hiddenapp",

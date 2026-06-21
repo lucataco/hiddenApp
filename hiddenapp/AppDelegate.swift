@@ -10,6 +10,7 @@
 import AppKit
 import os
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private let logger = Logger(

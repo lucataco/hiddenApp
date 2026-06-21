@@ -37,7 +37,10 @@ jobs:
           ref: refs/tags/${{ github.event.inputs.tag }}
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          echo "Selecting: $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
 
       - name: Show Xcode version
         run: xcodebuild -version
@@ -135,7 +138,7 @@ jobs:
             -destination 'generic/platform=macOS' \
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="$CODESIGN_IDENTITY" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=LPW32R55UN \
             archive \
             -archivePath "$RUNNER_TEMP/hiddenapp.xcarchive"
