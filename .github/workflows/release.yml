@@ -174,7 +174,8 @@ jobs:
 
           printf '==> Verifying code signature...\n'
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          spctl -a -t exec -vv "$APP_PATH"
+          # spctl will reject the app until it's notarized; check again after stapling
+          spctl -a -t exec -vv "$APP_PATH" || true
 
           printf '==> Creating release archive (pre-notarization)...\n'
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
@@ -189,6 +190,9 @@ jobs:
           printf '==> Stapling notarization ticket...\n'
           xcrun stapler staple "$APP_PATH"
           xcrun stapler validate "$APP_PATH"
+
+          printf '==> Verifying Gatekeeper acceptance...\n'
+          spctl -a -t exec -vv "$APP_PATH"
 
           printf '==> Repacking notarized and stapled app...\n'
           rm -f "$ZIP_PATH"

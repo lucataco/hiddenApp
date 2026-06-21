@@ -57,6 +57,11 @@ jobs:
 
       - name: Run tests
         run: |
+          MACOS_MAJOR=$(sw_vers -productVersion | cut -d. -f1)
+          if [ "$MACOS_MAJOR" -lt 26 ]; then
+            echo "Skipping tests: macOS $(sw_vers -productVersion) is older than deployment target 26.4"
+            exit 0
+          fi
           xcodebuild \
             -project hiddenapp.xcodeproj \
             -scheme hiddenapp \
