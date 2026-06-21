@@ -3,6 +3,7 @@
 //  hiddenapp
 //
 
+import CoreGraphics
 import Foundation
 
 enum Constants {
@@ -23,6 +24,10 @@ enum Constants {
     
     /// Minimum collapse length (for very small screens or if screen detection fails).
     static let separatorMinCollapseLength: CGFloat = 500
+
+    /// Fallback screen width used when no connected display can be detected
+    /// (e.g., during early launch or headless test runs). A common MacBook width.
+    static let fallbackScreenWidth: CGFloat = 1728
     
     /// Extra pixels beyond screen width to ensure icons are fully pushed off-screen.
     /// Generous padding so even edge cases are covered.

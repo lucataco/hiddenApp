@@ -39,7 +39,8 @@ final class StatusBarController {
     
     // MARK: - Core Components
     
-    private let autoHideManager = AutoHideManager()
+    private let preferences = Preferences()
+    private let autoHideManager: AutoHideManager
     
     // MARK: - State
     
@@ -65,6 +66,8 @@ final class StatusBarController {
     // MARK: - Initialization
     
     init() {
+        autoHideManager = AutoHideManager(preferences: preferences)
+
         // Order matters: toggle is created first so it's placed further right.
         // Separator is created second so it's placed to the toggle's left.
         setupToggleItem()
@@ -88,32 +91,42 @@ final class StatusBarController {
     private func setupToggleItem() {
         toggleItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         toggleItem.autosaveName = Constants.toggleAutosaveName
-        
+
         guard let button = toggleItem.button else { return }
-        
+
         button.image = NSImage(
             systemSymbolName: "chevron.right",
-            accessibilityDescription: "Toggle hidden menu bar icons"
+            accessibilityDescription: nil
         )
         button.image?.size = NSSize(width: 12, height: 12)
         button.imagePosition = .imageOnly
         button.target = self
         button.action = #selector(toggleClicked(_:))
         button.sendAction(on: [.leftMouseUp])
+
+        // Accessibility: announce as a button with a descriptive label and hint.
+        button.setAccessibilityRole(.button)
+        button.setAccessibilityLabel(String(localized: "HiddenApp"))
+        button.setAccessibilityHelp(String(localized: "Click to show or hide menu bar icons"))
     }
-    
+
     private func setupSeparatorItem() {
         separatorItem = NSStatusBar.system.statusItem(withLength: Constants.separatorNormalLength)
         separatorItem.autosaveName = Constants.separatorAutosaveName
-        
+
         guard let button = separatorItem.button else { return }
-        
+
         // Draw a thin vertical line as the separator visual
         button.image = makeSeparatorImage()
         button.imagePosition = .imageOnly
         // The separator button itself doesn't need an action — it's just a visual divider.
         // Users drag other status items around it to decide which get hidden.
         button.appearsDisabled = true
+
+        // Accessibility: the separator is decorative. Announce it as an image
+        // with a simple label so VoiceOver users know what it is.
+        button.setAccessibilityRole(.image)
+        button.setAccessibilityLabel(String(localized: "Separator"))
     }
     
     /// Create a thin vertical line image for the separator.
@@ -134,17 +147,17 @@ final class StatusBarController {
         contextMenu = NSMenu()
         
         let prefsItem = NSMenuItem(
-            title: "Preferences...",
+            title: String(localized: "Preferences…"),
             action: #selector(showPreferences(_:)),
             keyEquivalent: ","
         )
         prefsItem.target = self
         contextMenu.addItem(prefsItem)
-        
+
         contextMenu.addItem(NSMenuItem.separator())
-        
+
         let quitItem = NSMenuItem(
-            title: "Quit HiddenApp",
+            title: String(localized: "Quit HiddenApp"),
             action: #selector(quitApp(_:)),
             keyEquivalent: "q"
         )
@@ -204,7 +217,7 @@ final class StatusBarController {
         // Try the actual screen the separator lives on first, fall back to widest screen
         let separatorScreenWidth = separatorItem.button?.window?.screen?.frame.width
         let widestScreenWidth = NSScreen.screens.map(\.frame.width).max()
-        let screenWidth = max(separatorScreenWidth ?? 0, widestScreenWidth ?? 1728)
+        let screenWidth = max(separatorScreenWidth ?? 0, widestScreenWidth ?? Constants.fallbackScreenWidth)
         
         collapseLength = max(
             Constants.separatorMinCollapseLength,
@@ -310,6 +323,9 @@ final class StatusBarController {
 
     /// Reveal icons during app shutdown without scheduling another auto-hide timer.
     func prepareForTermination() {
+        pendingCollapseRetry?.cancel()
+        pendingCollapseRetry = nil
+
         if isCollapsed {
             isCollapsed = false
             separatorItem.length = Constants.separatorNormalLength
@@ -346,9 +362,14 @@ final class StatusBarController {
         let symbolName = isCollapsed ? "chevron.left" : "chevron.right"
         toggleItem.button?.image = NSImage(
             systemSymbolName: symbolName,
-            accessibilityDescription: isCollapsed ? "Show hidden icons" : "Hide icons"
+            accessibilityDescription: nil
         )
         toggleItem.button?.image?.size = NSSize(width: 12, height: 12)
+        toggleItem.button?.setAccessibilityValue(
+            isCollapsed
+                ? String(localized: "hidden")
+                : String(localized: "shown")
+        )
     }
     
     // MARK: - Actions
@@ -364,11 +385,11 @@ final class StatusBarController {
         }
         
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 200)
+        popover.contentSize = NSSize(width: 280, height: 240)
         popover.behavior = .transient
         popover.animates = true
-        
-        let prefsView = PreferencesView(autoHideManager: autoHideManager)
+
+        let prefsView = PreferencesView(preferences: preferences, autoHideManager: autoHideManager)
         popover.contentViewController = NSHostingController(rootView: prefsView)
         
         if let button = toggleItem.button {

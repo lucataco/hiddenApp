@@ -85,14 +85,35 @@ No private APIs. No custom windows. No overlay windows, no visual effect hacks.
    cd hiddenapp
    ```
 
-2. Open in Xcode:
+2. Generate the Xcode project (requires [XcodeGen](https://github.com/yonaskolb/XcodeGen)):
+   ```bash
+   brew install xcodegen
+   ./scripts/generate-xcodeproj.sh
+   ```
+
+3. Open in Xcode:
    ```bash
    open hiddenapp.xcodeproj
    ```
 
-3. Select the **hiddenapp** scheme, choose **My Mac** as the destination, and hit **Run** (Cmd+R).
+4. Select the **hiddenapp** scheme, choose **My Mac** as the destination, and hit **Run** (Cmd+R).
 
-4. The app appears in the menu bar — look for the `>` chevron and `|` separator.
+5. The app appears in the menu bar — look for the `>` chevron and `|` separator.
+
+### Building from the command line
+
+```bash
+./scripts/generate-xcodeproj.sh
+xcodebuild -project hiddenapp.xcodeproj -scheme hiddenapp -configuration Debug \
+  -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
+```
+
+### Running tests
+
+```bash
+xcodebuild -project hiddenapp.xcodeproj -scheme hiddenapp -configuration Debug \
+  -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO test
+```
 
 ## Project Structure
 
@@ -102,10 +123,23 @@ hiddenapp/
   AppDelegate.swift          Creates StatusBarController on launch
   StatusBarController.swift  Core logic: toggle + separator items, collapse/expand
   AutoHideManager.swift      Configurable auto-collapse timer
+  Preferences.swift          Unified UserDefaults wrapper (injectable for testing)
   PreferencesView.swift      SwiftUI popover for settings
   Constants.swift            UserDefaults keys, separator dimensions
+  Localizable.xcstrings      String catalog for localization
+  PrivacyInfo.xcprivacy      Privacy manifest
+  hiddenapp.entitlements     App Sandbox + hardened runtime entitlements
   Assets.xcassets/           App icon assets
+hiddenappTests/              Swift Testing unit tests
+project.yml                  XcodeGen project definition
+scripts/
+  generate-xcodeproj.sh      Regenerates hiddenapp.xcodeproj from project.yml
+  update_homebrew_cask.py    Updates the Homebrew cask version and SHA256
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on building, testing, and submitting changes.
 
 ## License
 

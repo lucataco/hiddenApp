@@ -8,24 +8,24 @@
 //
 
 import AppKit
+import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    
+
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.catacolabs.hiddenapp",
+        category: "AppDelegate"
+    )
+
     private var statusBarController: StatusBarController?
-    
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Ensure no main window is shown
-        // (The SwiftUI App struct has no WindowGroup, but just in case)
-        for window in NSApplication.shared.windows {
-            window.close()
-        }
-        
-        // Initialize the status bar controller, which sets up everything
+        logger.info("HiddenApp launching.")
         statusBarController = StatusBarController()
     }
-    
+
     func applicationWillTerminate(_ notification: Notification) {
-        // Ensure icons are revealed before the app quits
+        logger.info("HiddenApp terminating; revealing hidden icons.")
         statusBarController?.prepareForTermination()
     }
 }
