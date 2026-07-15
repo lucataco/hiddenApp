@@ -76,4 +76,19 @@ import Testing
         let prefs2 = Preferences(defaults: defaults)
         #expect(prefs2.autoHideDelay == 30.0)
     }
+
+    // MARK: - Onboarding
+
+    @Test func hasCompletedOnboardingDefaultsToFalse() {
+        let prefs = Preferences(defaults: defaults)
+        #expect(prefs.hasCompletedOnboarding == false)
+    }
+
+    @Test func hasCompletedOnboardingPersistsAcrossInstances() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.hasCompletedOnboarding = true
+
+        let prefs2 = Preferences(defaults: defaults)
+        #expect(prefs2.hasCompletedOnboarding == true)
+    }
 }

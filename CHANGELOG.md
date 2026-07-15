@@ -5,6 +5,41 @@ All notable changes to HiddenApp are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-14
+
+A UI/UX-focused release by Catacolabs: the app now explains itself.
+
+### Added
+
+- **First-run welcome popover** — on first launch, a one-time popover anchored
+  to the chevron walks through the three things a new user needs to know:
+  ⌘-drag icons to the left of the `|` separator, click the chevron to
+  hide/show, right-click for Preferences. Previously this crucial setup step
+  lived only in the README.
+- **Tooltips** — hovering the chevron explains what a click will do (and that
+  right-click opens preferences); hovering the separator explains the ⌘-drag
+  gesture.
+- **Usage tip in Preferences** — the preferences popover now includes the
+  ⌘-drag hint, so the core interaction is discoverable even after onboarding.
+- **Wrong-side separator alert** — if the `|` separator has been dragged to
+  the wrong side of the chevron, clicking the chevron now shows an alert
+  explaining how to fix it instead of silently doing nothing.
+- **Catacolabs link** — the preferences popover footer links to
+  [catacolabs.com](https://catacolabs.com).
+
+### Changed
+
+- **Auto-hide waits for you to finish** — the auto-hide timer no longer
+  collapses icons while the pointer is in the menu bar (e.g. while another
+  status item's menu is open). It re-checks every 2 seconds and collapses
+  once the pointer leaves.
+- **Preferences popover reveals icons** — opening Preferences now expands
+  hidden icons so changes have visible feedback, and the auto-hide countdown
+  pauses while the popover is open (it resumes on close).
+- **Delay slider is labeled** — the auto-hide delay slider now shows its
+  2s–60s range instead of an unlabeled track.
+- Copyright updated to © 2026 Catacolabs.
+
 ## [1.1.0] - 2026-06-21
 
 ### Added

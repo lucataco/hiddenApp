@@ -21,7 +21,7 @@ import os
 import SwiftUI
 
 @MainActor
-final class StatusBarController {
+final class StatusBarController: NSObject {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.catacolabs.hiddenapp",
         category: "StatusBarController"
@@ -58,16 +58,22 @@ final class StatusBarController {
     /// Pending retry for a collapse attempt that raced status-item placement.
     private var pendingCollapseRetry: DispatchWorkItem?
     
-    // MARK: - Right-click Menu & Preferences Popover
+    // MARK: - Right-click Menu & Popovers
     
     private var contextMenu: NSMenu!
     private var preferencesPopover: NSPopover?
+    private var welcomePopover: NSPopover?
     private var rightClickMonitor: Any?
+
+    /// True when the wrong-side-separator alert is already on screen,
+    /// preventing duplicate alerts from queued retries.
+    private var isShowingPositionAlert = false
     
     // MARK: - Initialization
     
-    init() {
+    override init() {
         autoHideManager = AutoHideManager(preferences: preferences)
+        super.init()
 
         // Order matters: toggle is created first so it's placed further right.
         // Separator is created second so it's placed to the toggle's left.
@@ -79,6 +85,7 @@ final class StatusBarController {
         setupScreenObserver()
         updateCollapseLength()
         startInitialAutoHideTimer()
+        showWelcomeIfNeeded()
     }
     
     deinit {
@@ -104,6 +111,7 @@ final class StatusBarController {
         button.target = self
         button.action = #selector(toggleClicked(_:))
         button.sendAction(on: [.leftMouseUp])
+        button.toolTip = String(localized: "Hide menu bar icons — right-click for preferences")
 
         // Accessibility: announce as a button with a descriptive label and hint.
         button.setAccessibilityRole(.button)
@@ -123,6 +131,7 @@ final class StatusBarController {
         // The separator button itself doesn't need an action — it's just a visual divider.
         // Users drag other status items around it to decide which get hidden.
         button.appearsDisabled = true
+        button.toolTip = String(localized: "Hold ⌘ and drag icons to the left of this line to hide them")
 
         // Accessibility: the separator is decorative. Announce it as an image
         // with a simple label so VoiceOver users know what it is.
@@ -188,6 +197,34 @@ final class StatusBarController {
         autoHideManager.onAutoHide = { [weak self] in
             self?.collapse()
         }
+        // Don't yank icons away while the user is interacting with the menu
+        // bar (e.g. another status item's menu is open, or they're mid-drag).
+        autoHideManager.shouldDeferAutoHide = { [weak self] in
+            self?.isPointerInMenuBar ?? false
+        }
+    }
+
+    /// Whether the mouse pointer is currently inside the menu bar strip of
+    /// any connected screen. Used to defer auto-hide during interaction.
+    private var isPointerInMenuBar: Bool {
+        let location = NSEvent.mouseLocation
+        return NSScreen.screens.contains { screen in
+            let frame = screen.frame
+            // The menu bar occupies the strip between the screen's top edge
+            // and its visibleFrame. Fall back to the status bar thickness
+            // (e.g. when the menu bar is set to auto-hide).
+            let menuBarHeight = max(
+                frame.maxY - screen.visibleFrame.maxY,
+                NSStatusBar.system.thickness
+            )
+            let menuBarRect = NSRect(
+                x: frame.minX,
+                y: frame.maxY - menuBarHeight,
+                width: frame.width,
+                height: menuBarHeight
+            )
+            return menuBarRect.contains(location)
+        }
     }
 
     private func startInitialAutoHideTimer() {
@@ -246,13 +283,27 @@ final class StatusBarController {
     // MARK: - Toggle Logic
     
     /// Collapse: push icons to the left of the separator off-screen.
-    func collapse() {
-        attemptCollapse(retriesRemaining: Constants.separatorPositionValidationMaxRetries)
+    /// - Parameter userInitiated: `true` when the user explicitly clicked the
+    ///   chevron. Enables visible feedback if the collapse can't proceed
+    ///   because the separator was dragged to the wrong side of the toggle.
+    func collapse(userInitiated: Bool = false) {
+        attemptCollapse(
+            retriesRemaining: Constants.separatorPositionValidationMaxRetries,
+            userInitiated: userInitiated
+        )
     }
 
-    private func attemptCollapse(retriesRemaining: Int) {
+    private func attemptCollapse(retriesRemaining: Int, userInitiated: Bool = false) {
         guard !isCollapsed else { return }
         guard isSeparatorValidPosition else {
+            // A user-initiated click should fail fast with visible feedback —
+            // if the positions are wrong now, retrying won't fix them (only
+            // the user dragging the separator back will).
+            if userInitiated {
+                logger.error("User-initiated collapse failed: separator is not to the left of the toggle.")
+                showSeparatorPositionAlert()
+                return
+            }
             scheduleCollapseRetry(retriesRemaining: retriesRemaining)
             return
         }
@@ -310,6 +361,24 @@ final class StatusBarController {
             execute: retry
         )
     }
+
+    /// Tell the user why hiding isn't working and how to fix it, instead of
+    /// failing silently into the log.
+    private func showSeparatorPositionAlert() {
+        guard !isShowingPositionAlert else { return }
+        isShowingPositionAlert = true
+        defer { isShowingPositionAlert = false }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "HiddenApp can't hide icons")
+        alert.informativeText = String(
+            localized: "The | separator must be to the left of the chevron. Hold ⌘ and drag the | separator to the left of the chevron, then try again."
+        )
+        alert.addButton(withTitle: String(localized: "OK"))
+        NSApp.activate()
+        alert.runModal()
+    }
     
     /// Expand: restore the separator to its normal thin width, revealing hidden icons.
     func expand() {
@@ -341,7 +410,7 @@ final class StatusBarController {
         if isCollapsed {
             expand()
         } else {
-            collapse()
+            collapse(userInitiated: true)
         }
     }
     
@@ -366,6 +435,9 @@ final class StatusBarController {
             accessibilityDescription: nil
         )
         toggleItem.button?.image?.size = NSSize(width: 12, height: 12)
+        toggleItem.button?.toolTip = isCollapsed
+            ? String(localized: "Show hidden menu bar icons — right-click for preferences")
+            : String(localized: "Hide menu bar icons — right-click for preferences")
         toggleItem.button?.setAccessibilityValue(
             isCollapsed
                 ? String(localized: "hidden")
@@ -384,11 +456,18 @@ final class StatusBarController {
             popover.performClose(sender)
             return
         }
+
+        // Reveal the hidden icons so changes (like toggling auto-hide) have
+        // visible feedback, and pause the auto-hide countdown while the
+        // popover is open so icons aren't yanked away mid-adjustment.
+        expand()
+        autoHideManager.cancelTimer()
         
         let popover = NSPopover()
         popover.contentSize = NSSize(width: 280, height: 240)
         popover.behavior = .transient
         popover.animates = true
+        popover.delegate = self
 
         let prefsView = PreferencesView(preferences: preferences, autoHideManager: autoHideManager)
         popover.contentViewController = NSHostingController(rootView: prefsView)
@@ -399,9 +478,66 @@ final class StatusBarController {
         
         preferencesPopover = popover
     }
+
+    // MARK: - First-run Onboarding
+
+    /// Show a one-time welcome popover anchored to the chevron that explains
+    /// the ⌘-drag setup step. Without it, a first-time user sees two glyphs
+    /// appear in the menu bar and has no idea what to do next.
+    private func showWelcomeIfNeeded() {
+        guard !preferences.hasCompletedOnboarding else { return }
+
+        // Give the status items a beat to join the menu bar so the popover
+        // has a valid anchor, and pause auto-hide during onboarding.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self, let button = self.toggleItem.button else { return }
+            guard self.welcomePopover == nil else { return }
+
+            self.autoHideManager.cancelTimer()
+
+            let popover = NSPopover()
+            popover.behavior = .transient
+            popover.animates = true
+            popover.delegate = self
+
+            let welcomeView = WelcomeView { [weak self] in
+                self?.welcomePopover?.performClose(nil)
+            }
+            popover.contentViewController = NSHostingController(rootView: welcomeView)
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+
+            self.welcomePopover = popover
+            self.logger.info("Showing first-run welcome popover.")
+        }
+    }
     
     @objc private func quitApp(_ sender: Any?) {
         prepareForTermination()
         NSApplication.shared.terminate(nil)
+    }
+}
+
+// MARK: - NSPopoverDelegate
+
+extension StatusBarController: NSPopoverDelegate {
+    func popoverDidClose(_ notification: Notification) {
+        guard let popover = notification.object as? NSPopover else { return }
+
+        if popover === welcomePopover {
+            welcomePopover = nil
+            // Mark onboarding complete however the popover was dismissed
+            // ("Got It" or clicking elsewhere) so it only ever shows once.
+            preferences.hasCompletedOnboarding = true
+            logger.info("First-run welcome popover dismissed; onboarding complete.")
+        }
+
+        if popover === preferencesPopover {
+            preferencesPopover = nil
+        }
+
+        // Resume the auto-hide countdown now that the user is done.
+        if !isCollapsed {
+            autoHideManager.startTimer()
+        }
     }
 }

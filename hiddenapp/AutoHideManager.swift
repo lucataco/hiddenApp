@@ -15,6 +15,12 @@ final class AutoHideManager {
     /// Called when the auto-hide timer fires and icons should be collapsed.
     var onAutoHide: (() -> Void)?
 
+    /// Optional check consulted when the timer fires. Return `true` to defer
+    /// the collapse (e.g. the pointer is in the menu bar, so the user is
+    /// likely mid-interaction). The manager re-checks every
+    /// `Constants.autoHideDeferInterval` seconds until it returns `false`.
+    var shouldDeferAutoHide: (() -> Bool)?
+
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.catacolabs.hiddenapp",
         category: "AutoHideManager"
@@ -63,16 +69,33 @@ final class AutoHideManager {
         guard isEnabled else { return }
 
         logger.debug("Starting auto-hide timer for \(self.delay, privacy: .public) seconds.")
+        scheduleTimer(after: delay)
+    }
+
+    private func scheduleTimer(after interval: TimeInterval) {
         timer = Timer.scheduledTimer(
-            withTimeInterval: delay,
+            withTimeInterval: interval,
             repeats: false
         ) { [weak self] _ in
-            self?.logger.debug("Auto-hide timer fired.")
-            self?.onAutoHide?()
+            self?.timerFired()
         }
         // Allow the OS to coalesce this non-strict timer with other work,
         // saving energy on a menu-bar utility that runs continuously.
-        timer?.tolerance = max(0.5, delay * 0.1)
+        timer?.tolerance = max(0.5, interval * 0.1)
+    }
+
+    private func timerFired() {
+        // If the user appears to be interacting with the menu bar, don't
+        // yank icons away mid-use — check again shortly instead.
+        if shouldDeferAutoHide?() == true {
+            logger.debug("Auto-hide deferred; pointer is in the menu bar. Re-checking shortly.")
+            scheduleTimer(after: Constants.autoHideDeferInterval)
+            return
+        }
+
+        logger.debug("Auto-hide timer fired.")
+        timer = nil
+        onAutoHide?()
     }
 
     /// Cancel any running auto-hide timer. Call this when the user

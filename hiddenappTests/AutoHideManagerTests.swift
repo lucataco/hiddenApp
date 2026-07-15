@@ -148,4 +148,60 @@ import Testing
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
         #expect(fired == true)
     }
+
+    // MARK: - Defer
+
+    @Test func shouldDeferAutoHidePreventsImmediateFiring() {
+        let prefs = Preferences(defaults: defaults)
+        defaults.set(0.1, forKey: Constants.autoHideDelay)
+
+        let manager = AutoHideManager(preferences: prefs)
+        var fired = false
+        manager.onAutoHide = { fired = true }
+        manager.shouldDeferAutoHide = { true }
+
+        manager.startTimer()
+
+        // The timer fires at 0.1s but defers; the re-check happens after
+        // Constants.autoHideDeferInterval (2s), so nothing fires within 1s.
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
+        #expect(fired == false)
+    }
+
+    @Test func deferredAutoHideFiresOnceDeferConditionClears() {
+        let prefs = Preferences(defaults: defaults)
+        defaults.set(0.1, forKey: Constants.autoHideDelay)
+
+        let manager = AutoHideManager(preferences: prefs)
+        var fired = false
+        var shouldDefer = true
+        manager.onAutoHide = { fired = true }
+        manager.shouldDeferAutoHide = { shouldDefer }
+
+        manager.startTimer()
+
+        // First fire (0.1s) defers. Clear the condition before the re-check.
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
+        shouldDefer = false
+
+        // Re-check occurs after Constants.autoHideDeferInterval (2s).
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: Constants.autoHideDeferInterval + 1.0))
+        #expect(fired == true)
+    }
+
+    @Test func cancelTimerAlsoCancelsDeferredRecheck() {
+        let prefs = Preferences(defaults: defaults)
+        defaults.set(0.1, forKey: Constants.autoHideDelay)
+
+        let manager = AutoHideManager(preferences: prefs)
+        var fired = false
+        manager.onAutoHide = { fired = true }
+        manager.shouldDeferAutoHide = { false }
+
+        manager.startTimer()
+        manager.cancelTimer()
+
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
+        #expect(fired == false)
+    }
 }

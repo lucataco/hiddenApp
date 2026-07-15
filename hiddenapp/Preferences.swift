@@ -46,4 +46,13 @@ final class Preferences {
             defaults.set(clamped, forKey: Constants.autoHideDelay)
         }
     }
+
+    // MARK: - Onboarding
+
+    /// Whether the first-run welcome popover has been shown and dismissed.
+    /// Defaults to `false` so new installs see the onboarding once.
+    var hasCompletedOnboarding: Bool {
+        get { defaults.bool(forKey: Constants.hasCompletedOnboarding) }
+        set { defaults.set(newValue, forKey: Constants.hasCompletedOnboarding) }
+    }
 }

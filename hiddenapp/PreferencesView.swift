@@ -55,7 +55,17 @@ struct PreferencesView: View {
                             value: $autoHideDelay,
                             in: Constants.minimumAutoHideDelay...Constants.maximumAutoHideDelay,
                             step: 1.0
-                        )
+                        ) {
+                            EmptyView()
+                        } minimumValueLabel: {
+                            Text("\(Int(Constants.minimumAutoHideDelay))s")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        } maximumValueLabel: {
+                            Text("\(Int(Constants.maximumAutoHideDelay))s")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                         .onChange(of: autoHideDelay) { _, newValue in
                             autoHideManager.setDelay(newValue)
                         }
@@ -77,12 +87,30 @@ struct PreferencesView: View {
 
             Divider()
 
-            // Version info
+            // Usage tip — cheap redundancy for anyone who missed onboarding.
+            Label {
+                Text("Hold ⌘ and drag menu bar icons to the left of the | to hide them.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "lightbulb")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+
+            // Version info + project link
             HStack {
                 Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                if let url = URL(string: Constants.projectURL) {
+                    Link("Catacolabs", destination: url)
+                        .font(.caption)
+                }
             }
         }
         .padding(16)

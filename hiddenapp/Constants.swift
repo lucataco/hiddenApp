@@ -10,12 +10,21 @@ enum Constants {
     // MARK: - UserDefaults Keys
     static let autoHideEnabled = "autoHideEnabled"
     static let autoHideDelay = "autoHideDelay"
+    static let hasCompletedOnboarding = "hasCompletedOnboarding"
     
     // MARK: - Default Values
     static let defaultAutoHideEnabled = true
     static let defaultAutoHideDelay: TimeInterval = 10.0
     static let minimumAutoHideDelay: TimeInterval = 2.0
     static let maximumAutoHideDelay: TimeInterval = 60.0
+
+    /// How long to wait before re-checking when auto-hide is deferred because
+    /// the pointer is in the menu bar (the user is likely mid-interaction).
+    static let autoHideDeferInterval: TimeInterval = 2.0
+
+    // MARK: - Links
+    /// Catacolabs home page, linked from the preferences popover.
+    static let projectURL = "https://catacolabs.com"
     
     // MARK: - Separator
     /// The normal width of the separator item when icons are visible (expanded).

@@ -11,6 +11,16 @@
         }
       }
     },
+    "Click the chevron to hide them. Click again to bring them back." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click the chevron to hide them. Click again to bring them back."
+          }
+        }
+      }
+    },
     "Click to show or hide menu bar icons" : {
       "localizations" : {
         "en" : {
@@ -31,12 +41,82 @@
         }
       }
     },
+    "Catacolabs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catacolabs"
+          }
+        }
+      }
+    },
+    "Got It" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Got It"
+          }
+        }
+      }
+    },
     "HiddenApp" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "HiddenApp"
+          }
+        }
+      }
+    },
+    "HiddenApp can't hide icons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HiddenApp can't hide icons"
+          }
+        }
+      }
+    },
+    "Hide menu bar icons — right-click for preferences" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide menu bar icons — right-click for preferences"
+          }
+        }
+      }
+    },
+    "Hold ⌘ and drag icons to the left of this line to hide them" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold ⌘ and drag icons to the left of this line to hide them"
+          }
+        }
+      }
+    },
+    "Hold ⌘ and drag menu bar icons to the LEFT of the | separator." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold ⌘ and drag menu bar icons to the LEFT of the | separator."
+          }
+        }
+      }
+    },
+    "Hold ⌘ and drag menu bar icons to the left of the | to hide them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold ⌘ and drag menu bar icons to the left of the | to hide them."
           }
         }
       }
@@ -91,12 +171,52 @@
         }
       }
     },
+    "Right-click the chevron for Preferences or to Quit." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right-click the chevron for Preferences or to Quit."
+          }
+        }
+      }
+    },
     "Separator" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Separator"
+          }
+        }
+      }
+    },
+    "Show hidden menu bar icons — right-click for preferences" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show hidden menu bar icons — right-click for preferences"
+          }
+        }
+      }
+    },
+    "The | separator must be to the left of the chevron. Hold ⌘ and drag the | separator to the left of the chevron, then try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The | separator must be to the left of the chevron. Hold ⌘ and drag the | separator to the left of the chevron, then try again."
+          }
+        }
+      }
+    },
+    "Welcome to HiddenApp" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to HiddenApp"
           }
         }
       }

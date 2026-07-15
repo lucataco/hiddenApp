@@ -17,6 +17,8 @@ brew install --cask lucataco/tap/hiddenapp
 
 ### First-time setup
 
+On first launch, HiddenApp shows a welcome popover that walks you through these steps:
+
 1. After launching, you'll see two new items in your menu bar: a thin vertical line `|` (the separator) and a chevron `>` (the toggle).
 
 2. **Arrange your icons**: Hold **Cmd** and drag menu bar icons you want to hide to the **left** of the `|` separator. Icons to the right of the separator stay visible.
@@ -27,11 +29,14 @@ brew install --cask lucataco/tap/hiddenapp
 
 5. **Optional: Launch at Login** — Right-click the chevron > **Preferences...** > toggle **Launch at login**.
 
+Tip: both menu bar items also have hover tooltips that explain what they do.
+
 ## Features
 
 - **Single-click toggle** — left-click the chevron to hide/show icons
 - **Right-click menu** — right-click the chevron for Preferences and Quit
-- **Auto-hide** — optionally auto-collapse icons after a configurable delay (2–60 seconds)
+- **First-run onboarding** — a one-time welcome popover explains the ⌘-drag setup
+- **Auto-hide** — optionally auto-collapse icons after a configurable delay (2–60 seconds); waits until the pointer leaves the menu bar so icons aren't yanked away mid-use
 - **Launch at Login** — via `SMAppService` (no helper app needed)
 - **Ultrawide monitor support** — dynamically computes collapse width from the widest connected display. No hardcoded caps.
 - **Multi-monitor aware** — recomputes on display connect/disconnect and resolution changes
@@ -125,6 +130,7 @@ hiddenapp/
   AutoHideManager.swift      Configurable auto-collapse timer
   Preferences.swift          Unified UserDefaults wrapper (injectable for testing)
   PreferencesView.swift      SwiftUI popover for settings
+  WelcomeView.swift          First-run onboarding popover
   Constants.swift            UserDefaults keys, separator dimensions
   Localizable.xcstrings      String catalog for localization
   PrivacyInfo.xcprivacy      Privacy manifest
