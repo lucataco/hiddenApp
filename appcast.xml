@@ -5,5 +5,17 @@
     <link>https://raw.githubusercontent.com/lucataco/hiddenapp/main/appcast.xml</link>
     <description>Most recent changes to HiddenApp.</description>
     <language>en</language>
-  </channel>
+      <item>
+      <title>HiddenApp 1.2.0</title>
+      <sparkle:releaseNotesLink>https://github.com/lucataco/hiddenapp/releases/tag/v1.2.0</sparkle:releaseNotesLink>
+      <pubDate>Tue, 08 Sep 2026 21:46:57 GMT</pubDate>
+      <enclosure
+        url="https://github.com/lucataco/hiddenapp/releases/download/v1.2.0/HiddenApp-1.2.0.zip"
+        sparkle:version="7"
+        sparkle:shortVersionString="1.2.0"
+        sparkle:edSignature="isYkSw0homr6FLiMtd98kDJqBWGSFZ6m6nhks8VtAw=="
+        length="1318568"
+        type="application/octet-stream" />
+    </item>
+</channel>
 </rss>
