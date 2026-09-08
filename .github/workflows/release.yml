@@ -117,16 +117,12 @@ jobs:
         id: sparkle
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+          if [ -n "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
             echo "SPARKLE_PRIVATE_KEY is not configured" >&2
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-          elif [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "HOMEBREW_TAP_TOKEN is not configured (needed to push the appcast past branch protection)" >&2
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare signing keychain
@@ -321,15 +317,16 @@ jobs:
       - name: Publish Sparkle appcast
         if: steps.sparkle.outputs.enabled == 'true'
         env:
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.vars.outputs.tag }}
           VERSION: ${{ steps.vars.outputs.version }}
           BUILD: ${{ steps.vars.outputs.build }}
           ED_SIGNATURE: ${{ steps.sign.outputs.ed_signature }}
           LENGTH: ${{ steps.sign.outputs.length }}
         run: |
+          BRANCH="appcast-v${VERSION}"
           git fetch origin main
-          git checkout -B appcast-publish origin/main
+          git checkout -B "$BRANCH" origin/main
           python3 ./scripts/update_appcast.py \
             appcast.xml \
             "$VERSION" \
@@ -341,9 +338,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
-          git commit -m "Update appcast for v${VERSION}"
-          git -c http.extraHeader="AUTHORIZATION: bearer ${HOMEBREW_TAP_TOKEN}" \
-            push origin appcast-publish:main
+          if git diff --cached --quiet; then
+            echo "appcast already up to date"
+          else
+            git commit -m "Update appcast for v${VERSION}"
+          fi
+          git push --force-with-lease origin "$BRANCH"
+          if gh pr view "$BRANCH" --json url --jq .url >/dev/null 2>&1; then
+            echo "Appcast PR already open: $(gh pr view "$BRANCH" --json url --jq .url)"
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "Update appcast for v${VERSION}" \
+              --body "Signed feed entry for HiddenApp ${VERSION} (build ${BUILD}). Merge to activate in-app updates."
+          fi
 
       - name: Warn when tap sync is disabled
         if: steps.tap.outputs.enabled != 'true'
@@ -353,7 +362,7 @@ jobs:
       - name: Warn when Sparkle appcast sync is disabled
         if: steps.sparkle.outputs.enabled != 'true'
         run: |
-          echo "Sparkle appcast sync is disabled (needs SPARKLE_PRIVATE_KEY and HOMEBREW_TAP_TOKEN secrets), so the appcast was not updated."
+          echo "Sparkle appcast sync is disabled (needs the SPARKLE_PRIVATE_KEY secret); open the appcast PR manually if needed."
 
       - name: Clean up signing keychain
         if: always()

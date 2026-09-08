@@ -84,7 +84,10 @@ Releases are triggered by pushing a `v*` tag (e.g., `v1.1.0`). The GitHub Action
 3. Notarizes the app via `notarytool` with an App Store Connect API key.
 4. Staples the notarization ticket.
 5. Creates a GitHub release with the signed zip.
-6. Signs the zip with the Sparkle EdDSA key and publishes a new `appcast.xml` entry to `main` (requires the `SPARKLE_PRIVATE_KEY` secret; skipped with a warning if unset).
+6. Signs the zip with the Sparkle EdDSA key and opens an appcast PR against
+   `main` (requires the `SPARKLE_PRIVATE_KEY` secret; skipped with a warning
+   if unset). **Merge that PR** to activate in-app updates — the bot can't
+   push past branch protection itself.
 7. Updates the Homebrew tap at `lucataco/homebrew-tap` with the new version and SHA256.
 
 Before tagging, update both `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`
