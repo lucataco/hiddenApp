@@ -1,21 +1,12 @@
-//
-//  WelcomeView.swift
-//  hiddenapp
-//
-//  First-run onboarding popover shown once, anchored to the toggle chevron.
-//  Explains the one non-obvious setup step (⌘-drag icons past the separator)
-//  in three short steps.
-//
-
 import SwiftUI
 
 struct WelcomeView: View {
-    /// Called when the user clicks "Got It" to dismiss the popover.
+
     var onDismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Header
+
             HStack(spacing: 8) {
                 Image(systemName: "menubar.rectangle")
                     .font(.title2)

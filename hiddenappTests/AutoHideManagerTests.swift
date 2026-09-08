@@ -1,27 +1,16 @@
-//
-//  AutoHideManagerTests.swift
-//  hiddenappTests
-//
-//  Tests for AutoHideManager: enable/disable, delay persistence, and timer
-//  lifecycle (start, cancel, fire).
-//
-
 import Foundation
 import Testing
 @testable import hiddenapp
 
 @MainActor
 @Suite struct AutoHideManagerTests {
-    /// A fresh UserDefaults suite for each test, UUID-named to prevent
-    /// cross-test contamination.
+
     private let defaults: UserDefaults
 
     init() {
         let suite = "hiddenapp-tests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)!
     }
-
-    // MARK: - State mirroring
 
     @Test func isEnabledReflectsPreferences() {
         let prefs = Preferences(defaults: defaults)
@@ -40,8 +29,6 @@ import Testing
         prefs.autoHideDelay = 20.0
         #expect(manager.delay == 20.0)
     }
-
-    // MARK: - setEnabled
 
     @Test func setEnabledPersistsToPreferences() {
         let prefs = Preferences(defaults: defaults)
@@ -69,8 +56,6 @@ import Testing
         #expect(fired == false)
     }
 
-    // MARK: - setDelay
-
     @Test func setDelayPersistsClampedToPreferences() {
         let prefs = Preferences(defaults: defaults)
         let manager = AutoHideManager(preferences: prefs)
@@ -84,7 +69,7 @@ import Testing
 
     @Test func setDelayRestartsTimerWhenEnabled() {
         let prefs = Preferences(defaults: defaults)
-        // Start with a long delay so the first timer won't fire quickly.
+
         defaults.set(60.0, forKey: Constants.autoHideDelay)
 
         let manager = AutoHideManager(preferences: prefs)
@@ -93,18 +78,14 @@ import Testing
 
         manager.setEnabled(true)
 
-        // With a 60s delay the callback should not fire in 0.3s.
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
         #expect(fired == false)
 
-        // setDelay clamps to the minimum (2.0s) and restarts the timer.
         manager.setDelay(Constants.minimumAutoHideDelay)
 
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 3.0))
         #expect(fired == true)
     }
-
-    // MARK: - Timer lifecycle
 
     @Test func startTimerDoesNothingWhenDisabled() {
         let prefs = Preferences(defaults: defaults)
@@ -149,8 +130,6 @@ import Testing
         #expect(fired == true)
     }
 
-    // MARK: - Defer
-
     @Test func shouldDeferAutoHidePreventsImmediateFiring() {
         let prefs = Preferences(defaults: defaults)
         defaults.set(0.1, forKey: Constants.autoHideDelay)
@@ -162,8 +141,6 @@ import Testing
 
         manager.startTimer()
 
-        // The timer fires at 0.1s but defers; the re-check happens after
-        // Constants.autoHideDeferInterval (2s), so nothing fires within 1s.
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
         #expect(fired == false)
     }
@@ -180,11 +157,9 @@ import Testing
 
         manager.startTimer()
 
-        // First fire (0.1s) defers. Clear the condition before the re-check.
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
         shouldDefer = false
 
-        // Re-check occurs after Constants.autoHideDeferInterval (2s).
         RunLoop.main.run(until: Date(timeIntervalSinceNow: Constants.autoHideDeferInterval + 1.0))
         #expect(fired == true)
     }

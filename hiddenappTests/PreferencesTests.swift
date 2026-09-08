@@ -1,18 +1,10 @@
-//
-//  PreferencesTests.swift
-//  hiddenappTests
-//
-//  Tests for the Preferences wrapper: defaults, clamping, and persistence.
-//
-
 import Foundation
 import Testing
 @testable import hiddenapp
 
 @MainActor
 @Suite struct PreferencesTests {
-    /// A fresh UserDefaults suite for each test, removed on deinit so tests
-    /// don't leak state to each other.
+
     private let defaults: UserDefaults
 
     init() {
@@ -76,8 +68,6 @@ import Testing
         let prefs2 = Preferences(defaults: defaults)
         #expect(prefs2.autoHideDelay == 30.0)
     }
-
-    // MARK: - Onboarding
 
     @Test func hasCompletedOnboardingDefaultsToFalse() {
         let prefs = Preferences(defaults: defaults)

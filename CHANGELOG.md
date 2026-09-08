@@ -5,6 +5,24 @@ All notable changes to HiddenApp are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-08
+
+### Added
+
+- **Automatic updates via Sparkle** — the app checks daily for signed,
+  notarized updates and installs them in place. Right-click the chevron >
+  **Check for Updates…** for a manual check. The release workflow signs each
+  release with an EdDSA key and publishes it to `appcast.xml`.
+
+### Changed
+
+- **Deployment target lowered to macOS 15** — the app now runs on Sequoia
+  and later instead of requiring Tahoe. No Tahoe-only APIs were in use.
+- **Swift 6 language mode** — the project builds with Swift 6.0, fixing the
+  MainActor isolation issues the migration exposed.
+- **Release hardening** — Swift previews are off and symbol stripping is on
+  for Release builds.
+
 ## [1.1.1] - 2026-07-14
 
 A UI/UX-focused release by Catacolabs: the app now explains itself.

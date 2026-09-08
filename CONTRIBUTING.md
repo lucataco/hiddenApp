@@ -4,8 +4,7 @@ Thanks for your interest in contributing to HiddenApp! This document covers buil
 
 ## Requirements
 
-- macOS 26 (Tahoe) or later
-- Xcode 26.4 or later
+- macOS 15 (Sequoia) or later to run; macOS 26.4 or later with Xcode 26.4+ to build
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 
 ## Getting started
@@ -80,10 +79,23 @@ The Xcode project is generated from `project.yml` via XcodeGen. **Do not edit `h
 
 Releases are triggered by pushing a `v*` tag (e.g., `v1.1.0`). The GitHub Actions `release` workflow:
 
-1. Builds the Release configuration with Developer ID Application signing.
-2. Notarizes the app via `notarytool` with an App Store Connect API key.
-3. Staples the notarization ticket.
-4. Creates a GitHub release with the signed zip.
-5. Updates the Homebrew tap at `lucataco/homebrew-tap` with the new version and SHA256.
+1. Verifies the tag matches `MARKETING_VERSION` in `project.yml`.
+2. Builds the Release configuration with Developer ID Application signing.
+3. Notarizes the app via `notarytool` with an App Store Connect API key.
+4. Staples the notarization ticket.
+5. Creates a GitHub release with the signed zip.
+6. Signs the zip with the Sparkle EdDSA key and publishes a new `appcast.xml` entry to `main` (requires the `SPARKLE_PRIVATE_KEY` secret; skipped with a warning if unset).
+7. Updates the Homebrew tap at `lucataco/homebrew-tap` with the new version and SHA256.
 
-The version is read from `MARKETING_VERSION` in `project.yml`. Update it there before tagging.
+Before tagging, update both `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`
+in `project.yml` — Sparkle needs a higher version (and build) than the last
+`appcast.xml` entry or clients won't be offered the update. The workflow
+fails the appcast step if the version isn't newer.
+
+One-time setup for updates: the EdDSA keypair is already generated. The
+public key is baked into the app as `SUPublicEDKey`. Store the private key
+(contents of `sparkle_private_key.txt`, base64 seed) as the
+`SPARKLE_PRIVATE_KEY` repository secret, then delete the local copy. If the
+private key is ever lost, Sparkle supports key rotation as long as the
+Developer ID certificate stays the same — generate a new keypair, ship one
+update signed with the old flow, then switch keys.

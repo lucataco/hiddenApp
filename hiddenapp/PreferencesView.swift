@@ -1,11 +1,3 @@
-//
-//  PreferencesView.swift
-//  hiddenapp
-//
-//  SwiftUI view shown in a popover from the preferences status item.
-//  Provides controls for auto-hide and launch at login.
-//
-
 import AppKit
 import SwiftUI
 import ServiceManagement
@@ -33,13 +25,12 @@ struct PreferencesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
+
             Text("HiddenApp")
                 .font(.headline)
 
             Divider()
 
-            // Auto-hide section
             VStack(alignment: .leading, spacing: 8) {
                 Toggle("Auto-hide icons", isOn: $autoHideEnabled)
                     .onChange(of: autoHideEnabled) { _, newValue in
@@ -79,7 +70,6 @@ struct PreferencesView: View {
 
             Divider()
 
-            // Launch at Login
             Toggle("Launch at login", isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { _, newValue in
                     setLaunchAtLogin(newValue)
@@ -87,7 +77,6 @@ struct PreferencesView: View {
 
             Divider()
 
-            // Usage tip — cheap redundancy for anyone who missed onboarding.
             Label {
                 Text("Hold ⌘ and drag menu bar icons to the left of the | to hide them.")
                     .font(.caption)
@@ -101,7 +90,6 @@ struct PreferencesView: View {
 
             Divider()
 
-            // Version info + project link
             HStack {
                 Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")")
                     .font(.caption)
@@ -116,7 +104,7 @@ struct PreferencesView: View {
         .padding(16)
         .frame(width: 280)
         .onAppear {
-            // Read current launch-at-login state
+
             launchAtLogin = (SMAppService.mainApp.status == .enabled)
         }
     }
@@ -132,7 +120,7 @@ struct PreferencesView: View {
             }
         } catch {
             logger.error("Launch at login change failed: \(error.localizedDescription, privacy: .public)")
-            // If registration fails, revert the toggle and explain why.
+
             launchAtLogin = (SMAppService.mainApp.status == .enabled)
             presentLaunchAtLoginError(error)
         }

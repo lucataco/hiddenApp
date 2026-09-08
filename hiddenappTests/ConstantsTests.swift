@@ -1,10 +1,3 @@
-//
-//  ConstantsTests.swift
-//  hiddenappTests
-//
-//  Sanity checks for Constants values that other tests depend on.
-//
-
 import CoreGraphics
 import Foundation
 import Testing

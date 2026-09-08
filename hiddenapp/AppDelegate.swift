@@ -1,12 +1,3 @@
-//
-//  AppDelegate.swift
-//  hiddenapp
-//
-//  The main application delegate. Sets up the StatusBarController
-//  which owns all menu bar items and the cover window.
-//  This is a menu-bar-only app (no Dock icon, no main window).
-//
-
 import AppKit
 import os
 

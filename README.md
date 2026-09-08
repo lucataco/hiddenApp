@@ -6,7 +6,7 @@ A lightweight macOS menu bar utility that hides other apps' status bar icons. A 
 
 ### Requirements
 
-- macOS 26 (Tahoe) or later
+- macOS 15 (Sequoia) or later
 - Xcode 26.4 or later (to build from source)
 
 ### Homebrew
@@ -25,7 +25,7 @@ On first launch, HiddenApp shows a welcome popover that walks you through these 
 
 3. **Click the chevron** `>` to hide. Click `<` to show again.
 
-4. **Right-click the chevron** to access Preferences (auto-hide timer, launch at login) or to Quit.
+4. **Right-click the chevron** to access Preferences (auto-hide timer, launch at login), check for updates, or to Quit.
 
 5. **Optional: Launch at Login** — Right-click the chevron > **Preferences...** > toggle **Launch at login**.
 
@@ -34,7 +34,8 @@ Tip: both menu bar items also have hover tooltips that explain what they do.
 ## Features
 
 - **Single-click toggle** — left-click the chevron to hide/show icons
-- **Right-click menu** — right-click the chevron for Preferences and Quit
+- **Right-click menu** — right-click (or Ctrl-click) the chevron for Preferences, Check for Updates, and Quit
+- **Automatic updates** — checks daily via Sparkle and installs signed, notarized updates in place
 - **First-run onboarding** — a one-time welcome popover explains the ⌘-drag setup
 - **Auto-hide** — optionally auto-collapse icons after a configurable delay (2–60 seconds); waits until the pointer leaves the menu bar so icons aren't yanked away mid-use
 - **Launch at Login** — via `SMAppService` (no helper app needed)
@@ -120,6 +121,17 @@ xcodebuild -project hiddenapp.xcodeproj -scheme hiddenapp -configuration Debug \
   -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO test
 ```
 
+## Updating
+
+HiddenApp checks for updates automatically once a day via
+[Sparkle](https://sparkle-project.org). Updates are EdDSA-signed and
+notarized; the feed lives at `appcast.xml` on the `main` branch and is
+updated by the release workflow. You can also check manually via
+right-click > **Check for Updates…**.
+
+Note for Homebrew users: the tap cask should declare `auto_updates true`
+so `brew upgrade` doesn't fight Sparkle's in-place updates.
+
 ## Project Structure
 
 ```
@@ -134,12 +146,15 @@ hiddenapp/
   Constants.swift            UserDefaults keys, separator dimensions
   Localizable.xcstrings      String catalog for localization
   PrivacyInfo.xcprivacy      Privacy manifest
+  Info.plist                 Bundle metadata incl. Sparkle feed URL and update key
   hiddenapp.entitlements     App Sandbox + hardened runtime entitlements
   Assets.xcassets/           App icon assets
 hiddenappTests/              Swift Testing unit tests
 project.yml                  XcodeGen project definition
+appcast.xml                  Sparkle update feed (updated by the release workflow)
 scripts/
   generate-xcodeproj.sh      Regenerates hiddenapp.xcodeproj from project.yml
+  update_appcast.py          Adds a signed release to appcast.xml
   update_homebrew_cask.py    Updates the Homebrew cask version and SHA256
 ```
 

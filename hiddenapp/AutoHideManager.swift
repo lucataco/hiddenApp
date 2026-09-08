@@ -1,24 +1,11 @@
-//
-//  AutoHideManager.swift
-//  hiddenapp
-//
-//  Manages a timer that automatically collapses (hides) menu bar icons
-//  after a configurable delay when the user has expanded them.
-//
-
 import Foundation
 import os
 
 @MainActor
 final class AutoHideManager {
 
-    /// Called when the auto-hide timer fires and icons should be collapsed.
     var onAutoHide: (() -> Void)?
 
-    /// Optional check consulted when the timer fires. Return `true` to defer
-    /// the collapse (e.g. the pointer is in the menu bar, so the user is
-    /// likely mid-interaction). The manager re-checks every
-    /// `Constants.autoHideDeferInterval` seconds until it returns `false`.
     var shouldDeferAutoHide: (() -> Bool)?
 
     private let logger = Logger(
@@ -33,15 +20,10 @@ final class AutoHideManager {
         self.preferences = preferences
     }
 
-    // MARK: - Public API
-
-    /// Whether auto-hide is enabled. Reads from ``Preferences``.
     var isEnabled: Bool { preferences.autoHideEnabled }
 
-    /// The auto-hide delay in seconds. Reads from ``Preferences``.
     var delay: TimeInterval { preferences.autoHideDelay }
 
-    /// Update the auto-hide enabled flag, persist it, and start/stop the timer.
     func setEnabled(_ enabled: Bool) {
         preferences.autoHideEnabled = enabled
         logger.info("Auto-hide enabled set to \(enabled, privacy: .public).")
@@ -52,8 +34,6 @@ final class AutoHideManager {
         }
     }
 
-    /// Update the auto-hide delay, persist it (clamped), and restart the timer
-    /// if auto-hide is currently enabled.
     func setDelay(_ newDelay: TimeInterval) {
         preferences.autoHideDelay = newDelay
         logger.info("Auto-hide delay set to \(self.preferences.autoHideDelay, privacy: .public) seconds.")
@@ -62,8 +42,6 @@ final class AutoHideManager {
         }
     }
 
-    /// Start the auto-hide countdown. Call this when icons are revealed.
-    /// If auto-hide is disabled, this does nothing.
     func startTimer() {
         cancelTimer()
         guard isEnabled else { return }
@@ -77,16 +55,18 @@ final class AutoHideManager {
             withTimeInterval: interval,
             repeats: false
         ) { [weak self] _ in
-            self?.timerFired()
+            guard let self else { return }
+
+            MainActor.assumeIsolated {
+                self.timerFired()
+            }
         }
-        // Allow the OS to coalesce this non-strict timer with other work,
-        // saving energy on a menu-bar utility that runs continuously.
+
         timer?.tolerance = max(0.5, interval * 0.1)
     }
 
     private func timerFired() {
-        // If the user appears to be interacting with the menu bar, don't
-        // yank icons away mid-use — check again shortly instead.
+
         if shouldDeferAutoHide?() == true {
             logger.debug("Auto-hide deferred; pointer is in the menu bar. Re-checking shortly.")
             scheduleTimer(after: Constants.autoHideDeferInterval)
@@ -98,8 +78,6 @@ final class AutoHideManager {
         onAutoHide?()
     }
 
-    /// Cancel any running auto-hide timer. Call this when the user
-    /// manually collapses icons or when the app is about to quit.
     func cancelTimer() {
         guard timer != nil else { return }
         logger.debug("Cancelling auto-hide timer.")
