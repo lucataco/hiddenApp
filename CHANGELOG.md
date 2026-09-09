@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **macOS 27 collapse** — Golden Gate composites the menu bar as a single
   window, so expanding `NSStatusItem.length` no longer pushes icons off
-  screen (the oversized item spills off the right instead). On macOS 27+
-  HiddenApp now covers the extras area to the left of the `|` separator
-  with stacked `NSVisualEffectView` overlays. macOS 15–26 still use the
-  original length trick.
+  screen. On macOS 27+ HiddenApp covers extras left of the `|` separator
+  with `NSGlassEffectView` (`.clear`) at pop-up-menu level so the overlay
+  uses Liquid Glass and follows light/dark (`AppleInterfaceStyle`). No
+  tinted wash — that read as a gray box on a transparent bar. macOS 15–26
+  still use the original length trick.
 
 ## [1.2.0] - 2026-09-08
 

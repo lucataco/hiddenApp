@@ -75,7 +75,7 @@ When you click the chevron to hide:
 
 **macOS 15–26.** `separatorItem.length` is set to a large value (e.g. 5620px on a 5120px ultrawide). macOS clips status items that don't fit, so everything to the separator's left is pushed off the leading edge. The chevron flips from `>` to `<`.
 
-**macOS 27+.** The menu bar is composited as a single WindowServer surface. An oversized status item no longer reflows the bar — it clamps and spills off the trailing edge, leaving hidden icons exactly where they were. HiddenApp therefore leaves the separator at 20px and covers the extras area to the left of it with stacked `NSVisualEffectView` overlays (compositor blur, no Screen Recording permission, no private API). Clicks on the covered zone are swallowed. The chevron still flips from `>` to `<`.
+**macOS 27+.** The menu bar is composited as a single WindowServer surface. An oversized status item no longer reflows the bar — it clamps and spills off the trailing edge, leaving hidden icons exactly where they were. HiddenApp therefore leaves the separator at 20px and covers the extras area to the left of it with `NSGlassEffectView` (Liquid Glass, `.clear`) so the overlay follows light/dark and a transparent bar instead of painting a gray wash. Clicks on the covered zone are swallowed. The chevron still flips from `>` to `<`.
 
 When you click to show:
 1. The overlay is removed (macOS 27+) or `separatorItem.length` is set back to 20px (earlier)

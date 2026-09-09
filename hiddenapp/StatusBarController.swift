@@ -412,18 +412,23 @@ final class StatusBarController: NSObject {
             return
         }
 
+        let menuBarHeight = nsScreen.frame.maxY - nsScreen.visibleFrame.maxY
+        // Autohidden / fullscreen: visibleFrame already fills the display.
+        // Do not fall back to NSStatusBar.thickness — that would paint a
+        // click-eating strip over the desktop.
+        guard menuBarHeight > OverlayRegion.minimumWidth else {
+            overlay.hide()
+            return
+        }
+
         let metrics = ScreenMetrics(
             frame: nsScreen.frame,
             auxiliaryTopRightMinX: nsScreen.auxiliaryTopRightArea?.minX
         )
-        let barHeight = max(
-            nsScreen.frame.maxY - nsScreen.visibleFrame.maxY,
-            NSStatusBar.system.thickness
-        )
         let region = OverlayRegion.span(
             separatorMinX: separatorMinX,
             screen: metrics,
-            barHeight: barHeight
+            barHeight: menuBarHeight
         )
         overlay.show(region: region)
     }
