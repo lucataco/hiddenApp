@@ -5,6 +5,17 @@ All notable changes to HiddenApp are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **macOS 27 collapse** — Golden Gate composites the menu bar as a single
+  window, so expanding `NSStatusItem.length` no longer pushes icons off
+  screen (the oversized item spills off the right instead). On macOS 27+
+  HiddenApp now covers the extras area to the left of the `|` separator
+  with stacked `NSVisualEffectView` overlays. macOS 15–26 still use the
+  original length trick.
+
 ## [1.2.0] - 2026-09-08
 
 ### Added
