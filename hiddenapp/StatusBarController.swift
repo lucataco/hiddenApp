@@ -421,12 +421,27 @@ final class StatusBarController: NSObject {
             return
         }
 
+        let hiddenMinX: CGFloat?
+        if ExtraItemFrames.isTrusted {
+            hiddenMinX = ExtraItemFrames.hiddenMinX(
+                separatorMinX: separatorMinX,
+                excludingBundleID: Bundle.main.bundleIdentifier
+            )
+            if hiddenMinX == nil {
+                overlay.hide()
+                return
+            }
+        } else {
+            hiddenMinX = nil
+        }
+
         let metrics = ScreenMetrics(
             frame: nsScreen.frame,
             auxiliaryTopRightMinX: nsScreen.auxiliaryTopRightArea?.minX
         )
         let region = OverlayRegion.span(
             separatorMinX: separatorMinX,
+            hiddenMinX: hiddenMinX,
             screen: metrics,
             barHeight: menuBarHeight
         )

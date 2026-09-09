@@ -11,13 +11,17 @@ struct ScreenMetrics: Equatable {
 }
 
 enum OverlayRegion {
-    /// Narrowest overlay worth showing. Below this the separator is already
-    /// at the extras leading edge and there is nothing to cover.
+    /// Narrowest overlay worth showing.
     static let minimumWidth: CGFloat = 1
 
-    /// On a notched screen the extras live in the top-right auxiliary area.
-    /// Without a notch they pack from the trailing edge; the midline is a
-    /// conservative bound so we never paint over app menus on the leading half.
+    /// Pad around a measured hidden-icon block so the plate doesn't clip glyphs.
+    static let iconPad: CGFloat = 3
+
+    /// When icon frames are unknown, cover this much immediately left of the
+    /// separator — extras pack against `|`. Do not stretch to the notch:
+    /// that empty glass is what read as a second plate.
+    static let fallbackPackedWidth: CGFloat = 80
+
     static func extrasLeadingX(screen: ScreenMetrics) -> CGFloat {
         if let extrasMinX = screen.auxiliaryTopRightMinX {
             return extrasMinX
@@ -25,14 +29,24 @@ enum OverlayRegion {
         return screen.frame.midX
     }
 
-    /// Rectangle covering everything in the extras area to the left of the
-    /// separator. Empty if the separator sits at or before that leading edge.
+    /// Overlay for hidden extras packed against the separator.
+    ///
+    /// `hiddenMinX` is the leading edge of the leftmost extra that should be
+    /// covered (from Accessibility). `nil` uses `fallbackPackedWidth`.
     static func span(
         separatorMinX: CGFloat,
+        hiddenMinX: CGFloat? = nil,
         screen: ScreenMetrics,
         barHeight: CGFloat
     ) -> CGRect {
-        let minX = extrasLeadingX(screen: screen)
+        let extrasMinX = extrasLeadingX(screen: screen)
+        let proposedMinX: CGFloat
+        if let hiddenMinX {
+            proposedMinX = hiddenMinX - iconPad
+        } else {
+            proposedMinX = separatorMinX - fallbackPackedWidth
+        }
+        let minX = max(extrasMinX, proposedMinX)
         let width = separatorMinX - minX
         guard width > minimumWidth, barHeight > 0 else { return .zero }
         return CGRect(

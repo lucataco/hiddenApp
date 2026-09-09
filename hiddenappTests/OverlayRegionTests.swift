@@ -21,17 +21,48 @@ import Testing
         #expect(OverlayRegion.extrasLeadingX(screen: unnotched) == 960)
     }
 
-    @Test func spanCoversFromExtrasLeadingEdgeToSeparator() {
+    @Test func withoutHiddenMinXPacksAgainstSeparator() {
         let region = OverlayRegion.span(
             separatorMinX: 1300,
             screen: notched,
             barHeight: barHeight
         )
-        #expect(region.minX == 920)
+        #expect(region.minX == 1300 - OverlayRegion.fallbackPackedWidth)
         #expect(region.maxX == 1300)
-        #expect(region.width == 380)
         #expect(region.height == barHeight)
         #expect(region.minY == 982 - barHeight)
+    }
+
+    @Test func hiddenMinXTightensOverlay() {
+        let region = OverlayRegion.span(
+            separatorMinX: 1300,
+            hiddenMinX: 1250,
+            screen: notched,
+            barHeight: barHeight
+        )
+        #expect(region.minX == 1250 - OverlayRegion.iconPad)
+        #expect(region.maxX == 1300)
+    }
+
+    @Test func hiddenMinXIsClampedToExtrasLeadingEdge() {
+        let region = OverlayRegion.span(
+            separatorMinX: 1300,
+            hiddenMinX: 100,
+            screen: notched,
+            barHeight: barHeight
+        )
+        #expect(region.minX == 920)
+        #expect(region.maxX == 1300)
+    }
+
+    @Test func fallbackPackedWidthIsClampedToExtrasLeadingEdge() {
+        let region = OverlayRegion.span(
+            separatorMinX: 960,
+            screen: notched,
+            barHeight: barHeight
+        )
+        #expect(region.minX == 920)
+        #expect(region.maxX == 960)
     }
 
     @Test func spanIsEmptyWhenSeparatorIsAtLeadingEdge() {
@@ -55,19 +86,21 @@ import Testing
     @Test func spanIsEmptyWhenBarHeightIsZero() {
         let region = OverlayRegion.span(
             separatorMinX: 1300,
+            hiddenMinX: 1250,
             screen: notched,
             barHeight: 0
         )
         #expect(region == .zero)
     }
 
-    @Test func unnotchedSpanNeverCrossesMidline() {
+    @Test func unnotchedFallbackDoesNotCrossMidline() {
         let region = OverlayRegion.span(
             separatorMinX: 1700,
             screen: unnotched,
             barHeight: barHeight
         )
-        #expect(region.minX == 960)
+        #expect(region.minX == 1700 - OverlayRegion.fallbackPackedWidth)
+        #expect(region.minX >= 960)
         #expect(region.maxX == 1700)
     }
 }
