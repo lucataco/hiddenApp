@@ -22,6 +22,10 @@ final class StatusBarController: NSObject {
 
     private var collapseLength: CGFloat = 2000
 
+    private let overlay = CollapseOverlay()
+
+    nonisolated(unsafe) private var overlayRefreshTimer: Timer?
+
     nonisolated(unsafe) private var screenObserver: NSObjectProtocol?
 
     nonisolated(unsafe) private var pendingCollapseRetry: DispatchWorkItem?
@@ -52,6 +56,7 @@ final class StatusBarController: NSObject {
 
     deinit {
         pendingCollapseRetry?.cancel()
+        overlayRefreshTimer?.invalidate()
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         if let rightClickMonitor { NSEvent.removeMonitor(rightClickMonitor) }
     }
@@ -270,7 +275,7 @@ final class StatusBarController: NSObject {
         updateCollapseLength()
 
         isCollapsed = true
-        separatorItem.length = collapseLength
+        applyCollapsedPresentation()
         updateChevron()
 
         autoHideManager.cancelTimer()
@@ -331,7 +336,7 @@ final class StatusBarController: NSObject {
         guard isCollapsed else { return }
 
         isCollapsed = false
-        separatorItem.length = Constants.separatorNormalLength
+        applyExpandedPresentation()
         updateChevron()
 
         autoHideManager.startTimer()
@@ -343,7 +348,7 @@ final class StatusBarController: NSObject {
 
         if isCollapsed {
             isCollapsed = false
-            separatorItem.length = Constants.separatorNormalLength
+            applyExpandedPresentation()
             updateChevron()
         }
 
@@ -363,8 +368,103 @@ final class StatusBarController: NSObject {
         updateCollapseLength()
 
         if isCollapsed {
+            applyCollapsedPresentation()
+        }
+    }
+
+    private var usesOverlayCollapse: Bool {
+        CollapseMode.current == .overlay
+    }
+
+    private func applyCollapsedPresentation() {
+        if usesOverlayCollapse {
+            separatorItem.length = Constants.separatorNormalLength
+            refreshOverlay()
+            startOverlayRefresh()
+        } else {
+            overlay.hide()
+            stopOverlayRefresh()
             separatorItem.length = collapseLength
         }
+    }
+
+    private func applyExpandedPresentation() {
+        overlay.hide()
+        stopOverlayRefresh()
+        separatorItem.length = Constants.separatorNormalLength
+    }
+
+    private func refreshOverlay() {
+        guard usesOverlayCollapse, isCollapsed else {
+            overlay.hide()
+            return
+        }
+        guard let separatorMinX = separatorItem.button?.window?.frame.minX else {
+            logger.error("Cannot place overlay: separator has no window frame.")
+            overlay.hide()
+            return
+        }
+
+        let nsScreen = separatorItem.button?.window?.screen
+            ?? NSScreen.main
+        guard let nsScreen else {
+            overlay.hide()
+            return
+        }
+
+        let menuBarHeight = nsScreen.frame.maxY - nsScreen.visibleFrame.maxY
+        // Autohidden / fullscreen: visibleFrame already fills the display.
+        // Do not fall back to NSStatusBar.thickness — that would paint a
+        // click-eating strip over the desktop.
+        guard menuBarHeight > OverlayRegion.minimumWidth else {
+            overlay.hide()
+            return
+        }
+
+        let hiddenMinX: CGFloat?
+        if ExtraItemFrames.isTrusted {
+            hiddenMinX = ExtraItemFrames.hiddenMinX(
+                separatorMinX: separatorMinX,
+                excludingBundleID: Bundle.main.bundleIdentifier
+            )
+            if hiddenMinX == nil {
+                overlay.hide()
+                return
+            }
+        } else {
+            hiddenMinX = nil
+        }
+
+        let metrics = ScreenMetrics(
+            frame: nsScreen.frame,
+            auxiliaryTopRightMinX: nsScreen.auxiliaryTopRightArea?.minX
+        )
+        let region = OverlayRegion.span(
+            separatorMinX: separatorMinX,
+            hiddenMinX: hiddenMinX,
+            screen: metrics,
+            barHeight: menuBarHeight
+        )
+        overlay.show(region: region)
+    }
+
+    private func startOverlayRefresh() {
+        guard usesOverlayCollapse else { return }
+        if overlayRefreshTimer != nil { return }
+        overlayRefreshTimer = Timer.scheduledTimer(
+            withTimeInterval: Constants.overlayRefreshInterval,
+            repeats: true
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshOverlay()
+            }
+        }
+        overlayRefreshTimer?.tolerance = 0.25
+    }
+
+    private func stopOverlayRefresh() {
+        overlayRefreshTimer?.invalidate()
+        overlayRefreshTimer = nil
     }
 
     private func updateChevron() {

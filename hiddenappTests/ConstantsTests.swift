@@ -29,4 +29,8 @@ import Testing
         #expect(Constants.separatorPositionValidationMaxRetries > 0)
         #expect(Constants.separatorPositionValidationRetryDelay > 0)
     }
+
+    @Test func overlayRefreshIntervalIsPositive() {
+        #expect(Constants.overlayRefreshInterval > 0)
+    }
 }

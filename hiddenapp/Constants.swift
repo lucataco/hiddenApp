@@ -27,6 +27,8 @@ enum Constants {
     static let separatorPositionValidationMaxRetries = 20
     static let separatorPositionValidationRetryDelay: TimeInterval = 0.25
 
+    static let overlayRefreshInterval: TimeInterval = 1.0
+
     static let toggleAutosaveName = "hiddenapp_toggle"
     static let separatorAutosaveName = "hiddenapp_separator"
 }

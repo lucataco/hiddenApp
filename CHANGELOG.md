@@ -5,6 +5,16 @@ All notable changes to HiddenApp are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **macOS 27 collapse** — overlay covers only extras packed against `|`
+  (Accessibility frames when granted; otherwise an 80pt strip) so empty
+  glass toward the notch stays native. `NSGlassEffectView.clear` follows
+  light/dark. No tinted wash. Autohidden menu bar does not paint over
+  the desktop. macOS 15–26 still use the length trick.
+
 ## [1.2.0] - 2026-09-08
 
 ### Added

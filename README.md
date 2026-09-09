@@ -1,6 +1,6 @@
 # HiddenApp
 
-A lightweight macOS menu bar utility that hides other apps' status bar icons. A clean reimplementation of [Hidden Bar](https://github.com/dwarvesf/hidden) that fixes the ultrawide monitor bug. No Dock icon, minimal UI, native `NSStatusItem` behavior. Works seamlessly with macOS 26 Liquid Glass.
+A lightweight macOS menu bar utility that hides other apps' status bar icons. A clean reimplementation of [Hidden Bar](https://github.com/dwarvesf/hidden) that fixes the ultrawide monitor bug. No Dock icon, minimal UI. Works on macOS 15 through 27.
 
 ## Install
 
@@ -69,19 +69,20 @@ Icons hidden:
 The app creates two `NSStatusItem`s:
 
 - **Toggle item** (created first, positioned further right): the `<`/`>` chevron button
-- **Separator item** (created second, positioned to toggle's left): normally 20px wide, expands to `widestScreenWidth + 500px` when collapsing
+- **Separator item** (created second, positioned to toggle's left): 20px wide. On macOS 15–26 it expands to `widestScreenWidth + 500px` when collapsing; on macOS 27+ it stays 20px and an overlay covers the extras to its left.
 
 When you click the chevron to hide:
-1. `separatorItem.length` is set to a large value (e.g., 5620px on a 5120px ultrawide)
-2. macOS naturally clips status items that don't fit — everything to the separator's left is pushed off the left edge of the screen
-3. The chevron flips from `>` to `<`
+
+**macOS 15–26.** `separatorItem.length` is set to a large value (e.g. 5620px on a 5120px ultrawide). macOS clips status items that don't fit, so everything to the separator's left is pushed off the leading edge. The chevron flips from `>` to `<`.
+
+**macOS 27+.** The menu bar is composited as a single WindowServer surface. An oversized status item no longer reflows the bar — it clamps and spills off the trailing edge, leaving hidden icons exactly where they were. HiddenApp therefore leaves the separator at 20px and covers **only the hidden extras packed against `|`** (Accessibility frames when granted; otherwise an 80pt strip). Empty extras stay native glass — no second plate over the notch. Clicks on the covered zone are swallowed. The chevron still flips from `>` to `<`.
 
 When you click to show:
-1. `separatorItem.length` is set back to 20px
-2. Icons slide back into view
+1. The overlay is removed (macOS 27+) or `separatorItem.length` is set back to 20px (earlier)
+2. Icons are visible in the bar again
 3. If auto-hide is enabled, a timer starts to re-collapse after the configured delay
 
-No private APIs. No custom windows. No overlay windows, no visual effect hacks.
+No private APIs. No Accessibility permission. No Screen Recording. On macOS 27 the overlay windows are the supported substitute for a length trick the OS no longer honors.
 
 ## Build from source
 
@@ -139,6 +140,9 @@ hiddenapp/
   hiddenappApp.swift         App entry point (@main, NSApplicationDelegateAdaptor)
   AppDelegate.swift          Creates StatusBarController on launch
   StatusBarController.swift  Core logic: toggle + separator items, collapse/expand
+  CollapseMode.swift         Length vs overlay collapse, by OS version
+  OverlayRegion.swift        Overlay geometry (testable without NSScreen)
+  CollapseOverlay.swift      macOS 27 compositor overlay that covers hidden icons
   AutoHideManager.swift      Configurable auto-collapse timer
   Preferences.swift          Unified UserDefaults wrapper (injectable for testing)
   PreferencesView.swift      SwiftUI popover for settings
